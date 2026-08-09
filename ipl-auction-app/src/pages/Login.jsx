@@ -5,9 +5,9 @@ import { useAuction } from '../context/AuctionContext.jsx'
 import { socket } from '../services/socket'
 import { TEAMS } from '../data/index.js'
 
-const API_URL = import.meta.env.PROD
+const API_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD
   ? 'https://ipl-auction-backend-pgr5.onrender.com'
-  : 'http://localhost:5051';
+  : 'http://localhost:5051');
 
 const getTeamEmail = (id) => `${id.toLowerCase()}@auctionx.in`;
 const adminEmail = 'auctioneer@auctionx.in';
