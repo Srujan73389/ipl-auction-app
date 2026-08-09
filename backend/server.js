@@ -193,7 +193,7 @@ function scheduleBotBid() {
   }, 1500 + Math.random() * 1000);
 }
 
-function finalizeSale(soldToTeam, soldPrice) {
+async function finalizeSale(soldToTeam, soldPrice) {
   if (!auctionState.currentPlayer) return;
   const player = auctionState.currentPlayer;
   const soldRecord = {
@@ -219,10 +219,11 @@ function finalizeSale(soldToTeam, soldPrice) {
 
   if (dbAvailable) {
     try {
-      db.query('INSERT INTO sold_players (player_id, sold_to, sold_price) VALUES ($1,$2,$3)', [soldRecord.id, soldRecord.soldTo, soldRecord.soldPrice]);
-      db.query('UPDATE teams SET budget = $1 WHERE id = $2', [auctionState.teamBudgets[soldRecord.soldTo], soldRecord.soldTo]);
+      await db.query('INSERT INTO sold_players (player_id, sold_to, sold_price) VALUES ($1,$2,$3)', [soldRecord.id, soldRecord.soldTo, soldRecord.soldPrice]);
+      await db.query('UPDATE teams SET budget = $1 WHERE id = $2', [auctionState.teamBudgets[soldRecord.soldTo], soldRecord.soldTo]);
+      console.log(`✅ Persisted sold player ${soldRecord.name} (₹${soldRecord.soldPrice} Cr -> ${soldRecord.soldTo}) to Supabase DB`);
     } catch (err) {
-      console.error('Failed to persist sold player:', err.message);
+      console.error('❌ Failed to persist sold player to Supabase DB:', err.message);
     }
   }
 
