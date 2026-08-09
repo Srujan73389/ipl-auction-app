@@ -6,6 +6,8 @@ import { soundService } from '../services/sound.js';
 import ReactConfetti from 'react-confetti';
 import BiddingWarClash from '../components/BiddingWarClash.jsx';
 
+import { socket } from '../services/socket';
+
 const fmt = (cr) => {
   if (!cr && cr !== 0) return '—';
   if (cr >= 1) return `₹${cr.toFixed(2)} Cr`;
@@ -15,6 +17,13 @@ const fmt = (cr) => {
 export default function SpectatorView() {
   const { state } = useAuction();
   const [muted, setMuted] = useState(soundService.isMuted());
+
+  useEffect(() => {
+    if (!socket.connected) {
+      console.log('📡 Connecting Spectator Mode socket...');
+      socket.connect();
+    }
+  }, []);
 
   const toggleSound = () => {
     const nextMuted = !muted;
@@ -206,12 +215,33 @@ export default function SpectatorView() {
               </AnimatePresence>
             </motion.div>
           ) : (
-            <div className="glass-card p-12 rounded-3xl text-center border border-white/10 max-w-md w-full">
-              <span className="text-6xl mb-4 block animate-bounce">🏏</span>
-              <h3 className="font-bebas text-3xl text-white">AUCTION PAUSED</h3>
-              <p className="text-white/40 text-sm font-rajdhani mt-2">
-                The auctioneer is preparing the next player for bidding.
+            <div className="glass-card-lg p-6 rounded-3xl text-center border-2 border-ipl-gold/30 w-full max-w-lg shadow-2xl">
+              <div className="inline-flex items-center gap-2 bg-amber-400/20 text-amber-300 font-bebas px-4 py-1 rounded-full text-xs font-bold tracking-widest mb-3 border border-amber-400/40 animate-pulse">
+                <span>🔴 STAGE STANDBY</span>
+              </div>
+              <h3 className="font-bebas text-3xl text-white tracking-wider">AUCTION STANDBY • NEXT PLAYER COMING UP</h3>
+              <p className="text-white/50 text-xs font-rajdhani mt-1 mb-4">
+                The auctioneer is initiating the next player bidding round.
               </p>
+
+              {state.playerQueue && state.playerQueue.length > 0 && (
+                <div className="bg-black/40 p-3 rounded-2xl border border-white/10 text-left">
+                  <div className="text-ipl-gold font-bebas text-sm tracking-wider mb-2">🔥 UPCOMING PLAYERS IN QUEUE:</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {state.playerQueue.slice(0, 3).map((p) => (
+                      <div key={p.id} className="bg-white/5 p-2 rounded-xl text-center flex flex-col items-center">
+                        {p.photo ? (
+                          <img src={p.photo} alt={p.name} className="w-10 h-10 rounded-full object-cover border border-ipl-gold/40 mb-1" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl mb-1">🏏</div>
+                        )}
+                        <div className="font-bebas text-xs text-white truncate w-full">{p.name}</div>
+                        <div className="text-[10px] text-amber-300 font-bold">{p.role}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
