@@ -144,7 +144,7 @@ function scheduleBotBid() {
 
   if (botTimer) clearTimeout(botTimer);
 
-  botTimer = setTimeout(() => {
+  botTimer = setTimeout(async () => {
     if (!auctionState.aiAutoBidEnabled || auctionState.auctionStatus !== 'live' || !auctionState.currentPlayer) return;
 
     const allTeamIds = Object.keys(auctionState.teamBudgets);
@@ -188,6 +188,16 @@ function scheduleBotBid() {
       const now = Date.now();
       auctionState.bids = [{ team: chosenTeam, amount: nextBid, ts: now }, ...auctionState.bids.slice(0, 29)];
       io.emit('stateUpdate', auctionState);
+
+      if (dbAvailable) {
+        try {
+          await db.query('INSERT INTO bids (player_id, team_id, amount) VALUES ($1,$2,$3)', [player.id, chosenTeam, nextBid]);
+          console.log(`✅ Persisted bot bid ₹${nextBid} Cr (${chosenTeam}) to Supabase DB`);
+        } catch (err) {
+          console.error('❌ Failed to persist bot bid to Supabase DB:', err.message);
+        }
+      }
+
       scheduleBotBid();
     }
   }, 1500 + Math.random() * 1000);
@@ -436,8 +446,9 @@ io.on('connection', (socket) => {
     if (dbAvailable) {
       try {
         await db.query('INSERT INTO bids (player_id, team_id, amount) VALUES ($1,$2,$3)', [auctionState.currentPlayer?.id || null, teamId, bidAmount]);
+        console.log(`✅ Persisted human bid ₹${bidAmount} Cr (${teamId}) to Supabase DB`);
       } catch (err) {
-        console.error('Failed to persist bid:', err.message);
+        console.error('❌ Failed to persist bid to Supabase DB:', err.message);
       }
     }
   });
